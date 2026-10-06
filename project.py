@@ -50,9 +50,6 @@ class world:
                     else: # if not
                         self.positions[char] = s # set the random position in the dict given the new character 
                         break
-        with open("characters.txt", "w") as f: 
-            for char in self.positions:
-                f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n")
 
     def land(self):
         grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
@@ -64,16 +61,30 @@ class world:
 
     def movement(self):
         class moves():
-            def __init__(self, left, right, up, down):
-                self.left = left
-                self.right = right
-                self.up = up
-                self.down = down
+            def __init__(move, left, right, up, down):
+                move.left = left
+                move.right = right
+                move.up = up
+                move.down = down
 
-            
+        for char in self.positions:
+            move = moves(random.randint(0, 2), random.randint(0, 2), random.randint(0, 2), random.randint(0, 2))
+            xchange = move.right - move.left 
+            ychange = move.up - move.down
+            self.positions[char][0] = (self.positions[char][0] + xchange) % self.size
+            self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
+
+
+    def save(self):
+        with open("characters.txt", "w") as f: 
+            for char in self.positions:
+                f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n")
+        
 
 w = world(20, ["Brody"])
 w.get_stats()
 w.characters()
+w.movement()
+w.save()
 for row in w.land():
     print("".join(row))
