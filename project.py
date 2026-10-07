@@ -50,7 +50,30 @@ class world:
             self.tick += 1 # increment time by 1
             print(self.tick) # print the current time
 
-    def land(self):
+    def land(self, deviation=None):
+        class natural_disasters():
+            def __init__(nd, left, right, up, down, leftup, leftdown, rightup, rightdown): # create disaster directions
+                nd.left = left
+                nd.right = right
+                nd.up = up
+                nd.down = down
+                nd.leftup = leftup
+                nd.leftdown = leftdown
+                nd.rightup = rightup
+                nd.rightdown = rightdown
+                nd.visited = set()
+        
+            def fire_BFS(nd):
+                if self.tick % 5 == 0:
+                    pass
+                
+        nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1])
+        nd.fire_BFS()
+
+        if deviation is not None:
+            if deviation == 1:
+                pass
+                
         grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
         for char in self.positions: # for each character in the dict
             x = self.positions[char][0] # x coordinate value in self.positions 
@@ -122,26 +145,6 @@ class world:
         for name in set(marked): 
             print(f"{name} dies!")
             del self.positions[name] 
-
-    def environment(self):
-        class natural_disasters():
-            def __init__(nd, left, right, up, down, leftup, leftdown, rightup, rightdown): # create disaster directions
-                nd.left = left
-                nd.right = right
-                nd.up = up
-                nd.down = down
-                nd.leftup = leftup
-                nd.leftdown = leftdown
-                nd.rightup = rightup
-                nd.rightdown = rightdown
-                nd.visited = set()
-
-            def fire_BFS(nd):
-                if self.tick % 25 == 0:
-                    pass
-                return 
-
-        natural_disasters
                            
     def save(self):
         with open("characters.txt", "w") as f: 
@@ -154,7 +157,6 @@ w = world(20, ["Josh"])
 w.time()
 w.get_stats()
 w.characters()
-w.environment()
 w.movement()
 w.save()
 for row in w.land():
