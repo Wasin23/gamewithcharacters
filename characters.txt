@@ -1,5 +1,0 @@
-alex,12,8
-jason,10,4
-maria,7,0
-bob,0,0
-cole,19,6

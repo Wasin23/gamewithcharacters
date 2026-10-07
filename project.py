@@ -7,7 +7,13 @@ import random
 # I want to create a game of life with multiple characters that move around and make decisions
 # The world will have natural disasters as well
 
-# how will I first create the layout? and then characters?
+# TODO LIST
+# create fire using BFS
+# Create earthquake using DFS
+# Kadane algo for storms
+# Character memories for previous x positions to skew movement towards something, assigned to self.positions
+# Potential disaster zone rescue (shortest path)
+# Food / resources
 
 # use DSA for complex character movement, assignment of traits, and other environmental factors
 # Have the list print every second with updates
@@ -96,10 +102,13 @@ class world:
             print(f"{name} dies!")
             del self.positions[name] 
 
-    def natural_disasters(self):
-        from collections import deque
+    def environment(self):
+        class natural_disasters():
+            from collections import deque
+            def fire(self):
+                pass
 
-        pass
+        natural_disasters
                             
     def save(self):
         with open("characters.txt", "w") as f: 
@@ -110,6 +119,7 @@ class world:
 w = world(20, [])
 w.get_stats()
 w.characters()
+w.environment()
 w.movement()
 w.save()
 for row in w.land():
