@@ -1,6 +1,8 @@
-import collections
+from collections import deque
 import math
 import random
+import numpy
+import pandas
 
 # this project will be a way for me to practice my code.
 # It will build upon itself
@@ -104,8 +106,18 @@ class world:
 
     def environment(self):
         class natural_disasters():
-            from collections import deque
-            def fire(self):
+            def __init__(nd, left, right, up, down, leftup, leftdown, rightup, rightdown): # create disaster directions
+                nd.left = left
+                nd.right = right
+                nd.up = up
+                nd.down = down
+                nd.leftup = leftup
+                nd.leftdown = leftdown
+                nd.rightup = rightup
+                nd.rightdown = rightdown
+                nd.visited = set()
+
+            def fire_BFS(nd):
                 pass
 
         natural_disasters
