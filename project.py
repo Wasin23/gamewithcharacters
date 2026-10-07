@@ -1,9 +1,11 @@
 import collections
 import math
 import random
+
 # this project will be a way for me to practice my code.
 # It will build upon itself
 # I want to create a game of life with multiple characters that move around and make decisions
+# The world will have natural disasters as well
 
 # how will I first create the layout? and then characters?
 
@@ -38,13 +40,13 @@ class world:
             if len(c) >= (self.size // 2) * self.size: # if the length of the positions exceeds or is equal to the size of the map
                 print("Cannot Assign Character, All Spots Full") # print this message and break
                 break
-            if self.positions[char] is None: # if the character is already found, leave it be
+            if self.positions[char] is None: # if the character is already found, leave it be, if not found, assign a position
                 while True:
                     x = random.randint(0, self.size - 1) # set random col from 0 to the input size
                     y = random.randint(0, (self.size // 2) - 1) # set random row from 0 to the input size
-                    s = [x, y] # set s to a list 
+                    s = [x, y] # set s to a list with the x and y coords of the char
                     for value in self.positions.values(): # loop thru values inside self.positions
-                        if value == s: # if a value already matches s, try again
+                        if value == s: # if a value (a current char position) already matches s, try again
                             print("reassigning")
                             break
                     else: # if not
@@ -93,6 +95,11 @@ class world:
         for name in set(marked): 
             print(f"{name} dies!")
             del self.positions[name] 
+
+    def natural_disasters(self):
+        from collections import deque
+
+        pass
                             
     def save(self):
         with open("characters.txt", "w") as f: 
