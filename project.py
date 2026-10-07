@@ -61,27 +61,46 @@ class world:
 
     def movement(self):
         class moves():
-            def __init__(move, left, right, up, down):
+            def __init__(move, left, right, up, down, ): # initialize move object, then directions
                 move.left = left
                 move.right = right
                 move.up = up
                 move.down = down
 
+        marked = []
         for char in self.positions:
-            move = moves(random.randint(0, 2), random.randint(0, 2), random.randint(0, 2), random.randint(0, 2))
-            xchange = move.right - move.left 
-            ychange = move.up - move.down
-            self.positions[char][0] = (self.positions[char][0] + xchange) % self.size
-            self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
-
-
+            if char in marked: # if the current character is marked for death, skip
+                continue
+            else:
+                move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
+                xchange = move.right - move.left # simplify down to a move on x axis
+                ychange = move.up - move.down # simplify to a move on y axis
+                self.positions[char][0] = (self.positions[char][0] + xchange) % self.size
+                self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
+                for x in self.positions:
+                    if x in marked: # if the other character has been added to marked, skip
+                        continue
+                    else:
+                        # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
+                        if self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
+                            roll = random.randint(0, 1) # random interaction picker
+                            if roll == 1: # first interaction --> random death
+                                s = random.randint(0, 10)
+                                if s >= 6: # if coinflip is greater than 5
+                                    marked.append(char) # mark current moving char for death
+                                if s <= 5: # if coinflip is less than 6
+                                    marked.append(x) # mark char already in position for death
+        for name in set(marked): 
+            print(f"{name} dies!")
+            del self.positions[name] 
+                            
     def save(self):
         with open("characters.txt", "w") as f: 
-            for char in self.positions:
-                f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n")
+            for char in self.positions: # loop though positions dict
+                f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n") # write character positions to the charcters file as a save
         
 
-w = world(20, ["Brody"])
+w = world(20, [])
 w.get_stats()
 w.characters()
 w.movement()
