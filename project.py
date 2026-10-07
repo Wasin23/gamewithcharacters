@@ -31,6 +31,7 @@ class world:
         self.tick = None # create time 
         self.positions = {} # create dict of positions
         self.worlddict = {} # create dict of world info
+        self.marked = []
         for char in self.character: self.positions[char] = None
 
     def time(self): # build time function
@@ -50,7 +51,7 @@ class world:
             self.tick += 1 # increment time by 1
             print(self.tick) # print the current time
 
-    def land(self, deviation=None):
+    def trigger_disaster(self):
         class natural_disasters():
             def __init__(nd, left, right, up, down, leftup, leftdown, rightup, rightdown): # create disaster directions
                 nd.left = left
@@ -61,19 +62,18 @@ class world:
                 nd.leftdown = leftdown
                 nd.rightup = rightup
                 nd.rightdown = rightdown
-                nd.visited = set()
-        
-            def fire_BFS(nd):
-                if self.tick % 5 == 0:
+                nd.visited = set() # create set of coordinates to show whats been visited
+            
+            def fire_BFS(nd): # create fire function
+                if self.tick % 11 == 0: # if the time is a multiple of 11 start a fire
+                    print("A fire has started! (marked as X)")
                     pass
-                
-        nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1])
+
+        nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
+        # call each natural disaster
         nd.fire_BFS()
 
-        if deviation is not None:
-            if deviation == 1:
-                pass
-                
+    def land(self):    
         grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
         for char in self.positions: # for each character in the dict
             x = self.positions[char][0] # x coordinate value in self.positions 
@@ -119,9 +119,8 @@ class world:
                 move.up = up
                 move.down = down
 
-        marked = []
         for char in self.positions:
-            if char in marked: # if the current character is marked for death, skip
+            if char in self.marked: # if the current character is marked for death, skip
                 continue
             else:
                 move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
@@ -130,7 +129,7 @@ class world:
                 self.positions[char][0] = (self.positions[char][0] + xchange) % self.size
                 self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
                 for x in self.positions:
-                    if x in marked: # if the other character has been added to marked, skip
+                    if x in self.marked: # if the other character has been added to marked, skip
                         continue
                     else:
                         # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
@@ -139,10 +138,10 @@ class world:
                             if roll == 1: # first interaction --> random death
                                 s = random.randint(0, 10)
                                 if s >= 6: # if coinflip is greater than 5
-                                    marked.append(char) # mark current moving char for death
+                                    self.marked.append(char) # mark current moving char for death
                                 if s <= 5: # if coinflip is less than 6
-                                    marked.append(x) # mark char already in position for death
-        for name in set(marked): 
+                                    self.marked.append(x) # mark char already in position for death
+        for name in set(self.marked): 
             print(f"{name} dies!")
             del self.positions[name] 
                            
@@ -157,6 +156,7 @@ w = world(20, ["Josh"])
 w.time()
 w.get_stats()
 w.characters()
+w.trigger_disaster()
 w.movement()
 w.save()
 for row in w.land():
