@@ -28,8 +28,35 @@ class world:
     def __init__(self, size, character: list[str]):
         self.size = size # set size input
         self.character = character # set character amount
+        self.tick = None # create time 
         self.positions = {} # create dict of positions
+        self.worlddict = {} # create dict of world info
         for char in self.character: self.positions[char] = None
+
+    def time(self): # build time function
+        with open("World.txt", "r") as w:
+            contents = w.read()
+            time = contents.split(",")
+            if contents:
+                print(time)
+                self.worlddict["Time"] = time
+                self.tick = int(time[0])
+        if self.worlddict: # if the time is recorded
+            self.worlddict["Time"] = self.tick # set time equal to the current time
+            self.tick += 1 # increment time by 1
+        else: # else
+            self.tick = 0 # set time equal to 0 if time is none
+            self.worlddict["Time"] = self.tick # then create the key in the dict with the time
+            self.tick += 1 # increment time by 1
+            print(self.tick) # print the current time
+
+    def land(self):
+        grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
+        for char in self.positions: # for each character in the dict
+            x = self.positions[char][0] # x coordinate value in self.positions 
+            y = self.positions[char][1] # y coordinate value in self.positions 
+            grid[y][x] = "@" # set the grid spot at position row x col to an @ symbol to indicate a character's position
+        return grid
 
     def get_stats(self):
             with open("characters.txt", "r") as f: # open db of characters and their positions
@@ -60,14 +87,6 @@ class world:
                     else: # if not
                         self.positions[char] = s # set the random position in the dict given the new character 
                         break
-
-    def land(self):
-        grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
-        for char in self.positions: # for each character in the dict
-            x = self.positions[char][0] # x coordinate value in self.positions 
-            y = self.positions[char][1] # y coordinate value in self.positions 
-            grid[y][x] = "@" # set the grid spot at position row x col to an @ symbol to indicate a character's position
-        return grid
 
     def movement(self):
         class moves():
@@ -118,17 +137,21 @@ class world:
                 nd.visited = set()
 
             def fire_BFS(nd):
-                pass
+                if self.tick % 25 == 0:
+                    pass
+                return 
 
         natural_disasters
-                            
+                           
     def save(self):
         with open("characters.txt", "w") as f: 
             for char in self.positions: # loop though positions dict
                 f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n") # write character positions to the charcters file as a save
-        
-
-w = world(20, [])
+        with open("World.txt", "w") as w:
+            w.write(f"{self.tick}")
+       
+w = world(20, ["Josh"])
+w.time()
 w.get_stats()
 w.characters()
 w.environment()
