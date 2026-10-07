@@ -31,11 +31,12 @@ class world:
         self.tick = None # create time 
         self.positions = {} # create dict of positions
         self.worlddict = {} # create dict of world info
+        self.grid = []
         self.marked = []
         for char in self.character: self.positions[char] = None
 
     def time(self): # build time function
-        with open("World.txt", "r") as w:
+        with open("Time.txt", "r") as w:
             contents = w.read()
             time = contents.split(",")
             if contents:
@@ -52,6 +53,18 @@ class world:
             print(self.tick) # print the current time
 
     def trigger_disaster(self):
+        with open("Disaster.txt", "r") as d:
+            contents = d.read()
+            spots = contents.split("\n")
+            for spot in spots: # loop through lists of coords per key
+                if not spot:
+                    continue # if the line is only an empty string, continue
+                spottype = spot.split(",") # split the stats of each spot found into parts
+                if spottype[0] in self.worlddict:
+                    self.worlddict[spottype[0]].append([int(x) for x in spottype[1:]]) # if there is already a list, append the latest 
+                else:
+                    self.worlddict[spottype[0]] = [[int(x) for x in spottype[1:]]] # rebuild self.worlddict dict from Disaster.txt and set the positions as integers
+
         class natural_disasters():
             def __init__(nd, left, right, up, down, leftup, leftdown, rightup, rightdown): # create disaster directions
                 nd.left = left
@@ -66,20 +79,34 @@ class world:
             
             def fire_BFS(nd): # create fire function
                 if self.tick % 11 == 0: # if the time is a multiple of 11 start a fire
+                    nd.visited = set(tuple(coord) for coord in self.worlddict.get("Fire", [])) # set the value at fire in worlddict to the coordinates of burning cells
                     print("A fire has started! (marked as X)")
-                    pass
+                    start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on fire
+                    queue = deque([start]) # build queue for dfs by creating a list with the start coordinates tupled
+                    nd.visited.add(tuple(start)) # add start tuple to visited
+                    while queue:
+                        spot = queue.popleft()
+                    self.worlddict["Fire"] = list(nd.visited)
 
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
         nd.fire_BFS()
 
     def land(self):    
-        grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
+        self.grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
         for char in self.positions: # for each character in the dict
             x = self.positions[char][0] # x coordinate value in self.positions 
             y = self.positions[char][1] # y coordinate value in self.positions 
-            grid[y][x] = "@" # set the grid spot at position row x col to an @ symbol to indicate a character's position
-        return grid
+            self.grid[y][x] = "@" # set the grid spot at position row x col to an @ symbol to indicate a character's position
+        for condition in self.worlddict: # loop through worlddict
+            if condition != "Time" and condition: # if the condition name is not time and exists
+                assign = self.worlddict[condition] # set assign to the list of lists at condition
+                for coords in assign: # loop through the list
+                    x = coords[0] # set x to the 0th index in the list
+                    y = coords[1] # set y to the 1st index in the list
+                    if condition == "Fire": # if condition string is fire mark the grid coords wih an X
+                        self.grid[y][x] = "X"
+        return self.grid
 
     def get_stats(self):
             with open("characters.txt", "r") as f: # open db of characters and their positions
@@ -149,10 +176,14 @@ class world:
         with open("characters.txt", "w") as f: 
             for char in self.positions: # loop though positions dict
                 f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n") # write character positions to the charcters file as a save
-        with open("World.txt", "w") as w:
-            w.write(f"{self.tick}")
+        with open("Time.txt", "w") as w: # open time file save
+            w.write(f"{self.tick}") # save self.tick written from the loop in time()
+        with open("Disaster.txt", "w") as w: # open disaster progress file
+            if self.worlddict.get("Fire", []): # if the worlddict at fire exists
+                for coord in self.worlddict.get("Fire", []): # loop through the coordinates at the fire key
+                    w.write(f"Fire,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Fire"
        
-w = world(20, ["Josh"])
+w = world(20, [])
 w.time()
 w.get_stats()
 w.characters()
