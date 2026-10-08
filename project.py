@@ -91,7 +91,7 @@ class world:
                     for coord in oldfire_coords: # loop through oldfire
                         del nd.visited[coord] # delete the previous records of oldfire inside the visited dict
                     if oldfire_coords:
-                        queue = deque(oldfire_coords) # build queue for dfs by creating a list with the start coordinates 
+                        queue = deque(oldfire_coords) # build queue for bfs by creating a list with the start coordinates 
                         dir = random.sample(nd.dirlist, 3) # set dir to a list of 3 randomly selected directions
                         for spot in list(oldfire_coords): # loop through the oldfire coordinates
                             spot = queue.popleft() # pop the first coordinate and set equal to spot
@@ -104,16 +104,16 @@ class world:
                                     newspot = tuple(newcoords) # convert newcoords list of updated coordinates back to a tuple
                                     if newspot in nd.visited: # if these coords already exist, ignore them
                                         continue
-                                    else: # if they do exist, add to the visited dict with the value "fire"
+                                    else: # if they don't exist, add to the visited dict with the value "fire"
                                         queue.append(newspot) 
                                         nd.visited[tuple(newspot)] = "Fire"
                                 else:
                                     continue
                             
-                    elif self.tick % 21 == 0: # if the time is a multiple of 11 start a fire
+                    elif self.tick % 21 == 0: # if the time is a multiple of 21 start a fire
                         print("A fire has started! (marked as X)")
                         start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on fire
-                        queue = deque([start]) # build queue for dfs by creating a list with the start coordinates tupled
+                        queue = deque([start]) # build queue for bfs by creating a list with the start coordinates tupled
                         dir = random.sample(nd.dirlist, 3)
                         nd.visited[tuple(start)] = "Fire" # add the new start coords to fire inside visited
 
