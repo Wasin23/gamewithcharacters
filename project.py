@@ -42,7 +42,7 @@ class world:
             if contents:
                 print(time)
                 self.worlddict["Time"] = time
-                self.tick = int(time[0])
+                self.tick = int(time[0]) 
         if self.worlddict: # if the time is recorded
             self.worlddict["Time"] = self.tick # set time equal to the current time
             self.tick += 1 # increment time by 1
@@ -53,18 +53,6 @@ class world:
             print(self.tick) # print the current time
 
     def trigger_disaster(self):
-        with open("Disaster.txt", "r") as d:
-            contents = d.read()
-            spots = contents.split("\n")
-            for spot in spots: # loop through lists of coords per key
-                if not spot:
-                    continue # if the line is only an empty string, continue
-                spottype = spot.split(",") # split the stats of each spot found into parts
-                if spottype[0] in self.worlddict:
-                    self.worlddict[spottype[0]].append([int(x) for x in spottype[1:]]) # if there is already a list, append the latest 
-                else:
-                    self.worlddict[spottype[0]] = [[int(x) for x in spottype[1:]]] # rebuild self.worlddict dict from Disaster.txt and set the positions as integers
-
         class natural_disasters():
             def __init__(nd, left, right, up, down, leftup, leftdown, rightup, rightdown): # create disaster directions
                 nd.left = left
@@ -75,21 +63,44 @@ class world:
                 nd.leftdown = leftdown
                 nd.rightup = rightup
                 nd.rightdown = rightdown
-                nd.visited = set() # create set of coordinates to show whats been visited
+                nd.visited = {} # create dict of coordinates to show whats been visited
+
+            def update(nd):
+                with open("Disaster.txt", "r") as d:
+                    contents = d.read()
+                    spots = contents.split("\n")
+                    for spot in spots: # loop through lists of coords per key
+                        if not spot:
+                            continue # if the line is only an empty string, continue
+                        spottype = spot.split(",") # split the stats of each spot found into parts
+                        if spottype[0] in self.worlddict: # if the particular key does exist
+                            self.worlddict[spottype[0]].append([int(x) for x in spottype[1:]]) # at spottype (the key), convert the list to ints and append each list to the key values
+                            coord = tuple(int(x) for x in spottype[1:]) # set coord equal to a tuple of the lists
+                            nd.visited[coord] = spottype[0] # create a key for the lists at the coord tuple
+                        else:
+                            self.worlddict[spottype[0]] = [[int(x) for x in spottype[1:]]] # rebuild self.worlddict dict from Disaster.txt and set the positions as integers
+                            coord = tuple(int(x) for x in spottype[1:])
+                            nd.visited[coord] = spottype[0] 
             
             def fire_BFS(nd): # create fire function
                 if self.tick % 11 == 0: # if the time is a multiple of 11 start a fire
-                    nd.visited = set(tuple(coord) for coord in self.worlddict.get("Fire", [])) # set the value at fire in worlddict to the coordinates of burning cells
+                    oldfire_coords = [coord for coord, type in nd.visited.items() if type == "Fire"]
                     print("A fire has started! (marked as X)")
-                    start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on fire
-                    queue = deque([start]) # build queue for dfs by creating a list with the start coordinates tupled
-                    nd.visited.add(tuple(start)) # add start tuple to visited
-                    while queue:
-                        spot = queue.popleft()
+                    if oldfire_coords:
+                        queue = deque(oldfire_coords) # build queue for dfs by creating a list with the start coordinates tupled
+                        while queue:
+                            spot = queue.popleft()
+                    else:
+                        start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on fire
+                        queue = deque([start]) # build queue for dfs by creating a list with the start coordinates tupled
+                        nd.visited[tuple(start)] = "Fire" # add the new start coords to fire inside visited
+                        while queue:
+                            spot = queue.popleft()
                     self.worlddict["Fire"] = list(nd.visited)
 
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
+        nd.update()
         nd.fire_BFS()
 
     def land(self):    
