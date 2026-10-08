@@ -10,12 +10,12 @@ import pandas
 # The world will have natural disasters as well
 
 # TODO LIST
-# create fire using BFS
-# Create earthquake using DFS
-# Kadane algo for storms
-# Character memories for previous x positions to skew movement towards something, assigned to self.positions
-# Potential disaster zone rescue (shortest path)
-# Food / resources
+# create fire using BFS: DONE
+# Create earthquake using DFS:
+# Kadane algo for storms:
+# Character memories for previous x positions to skew movement towards something, assigned to self.positions:
+# Potential disaster zone rescue (shortest path):
+# Food / resources:
 
 # use DSA for complex character movement, assignment of traits, and other environmental factors
 # Have the list print every second with updates
@@ -63,6 +63,7 @@ class world:
                 nd.leftdown = leftdown
                 nd.rightup = rightup
                 nd.rightdown = rightdown
+                nd.dirlist = [nd.right, nd.left, nd.up, nd.down, nd.leftup, nd.leftdown, nd.rightup, nd.rightdown]
                 nd.visited = {} # create dict of coordinates to show whats been visited
 
             def update(nd):
@@ -83,20 +84,40 @@ class world:
                             nd.visited[coord] = spottype[0] 
             
             def fire_BFS(nd): # create fire function
-                if self.tick % 11 == 0: # if the time is a multiple of 11 start a fire
-                    oldfire_coords = [coord for coord, type in nd.visited.items() if type == "Fire"]
-                    print("A fire has started! (marked as X)")
+                if self.tick % 30 == 0: # if the tick is a multiple of 30, kill the fire
+                    self.worlddict["Fire"] = [] # set fire to an empty list
+                else:
+                    oldfire_coords = [coord for coord, type in nd.visited.items() if type == "Fire"] # find the fire coordinates from the previous round and set it to oldfire
+                    for coord in oldfire_coords: # loop through oldfire
+                        del nd.visited[coord] # delete the previous records of oldfire inside the visited dict
                     if oldfire_coords:
-                        queue = deque(oldfire_coords) # build queue for dfs by creating a list with the start coordinates tupled
-                        while queue:
-                            spot = queue.popleft()
-                    else:
+                        queue = deque(oldfire_coords) # build queue for dfs by creating a list with the start coordinates 
+                        dir = random.sample(nd.dirlist, 3) # set dir to a list of 3 randomly selected directions
+                        for spot in list(oldfire_coords): # loop through the oldfire coordinates
+                            spot = queue.popleft() # pop the first coordinate and set equal to spot
+                            for i in dir: # loop through directions
+                                # pick a random number between the 0 and the amount of fire spots times 5, 
+                                # and if the remainer of that number divided by the fire spots divided by 2 is 0, spread the fire in the selected direction
+                                if random.randint(0, len(self.worlddict["Fire"]) * 5) % ((len(self.worlddict["Fire"]) + 1) // 2) == 0:  
+                                    s = list(spot) # s is the listed version of the tuple, spot
+                                    newcoords = [(s[0] + i[0]) % (self.size), (s[1] + i[1]) % (self.size // 2)] # newcoords is the corrected coordinates (for out of bounds) of the fire
+                                    newspot = tuple(newcoords) # convert newcoords list of updated coordinates back to a tuple
+                                    if newspot in nd.visited: # if these coords already exist, ignore them
+                                        continue
+                                    else: # if they do exist, add to the visited dict with the value "fire"
+                                        queue.append(newspot) 
+                                        nd.visited[tuple(newspot)] = "Fire"
+                                else:
+                                    continue
+                            
+                    elif self.tick % 21 == 0: # if the time is a multiple of 11 start a fire
+                        print("A fire has started! (marked as X)")
                         start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on fire
                         queue = deque([start]) # build queue for dfs by creating a list with the start coordinates tupled
+                        dir = random.sample(nd.dirlist, 3)
                         nd.visited[tuple(start)] = "Fire" # add the new start coords to fire inside visited
-                        while queue:
-                            spot = queue.popleft()
-                    self.worlddict["Fire"] = list(nd.visited)
+
+                    self.worlddict["Fire"] = list(nd.visited) # set worlddict at fire to the updated visited list
 
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
@@ -158,13 +179,16 @@ class world:
                 move.down = down
 
         for char in self.positions:
+            for key in self.worlddict:
+                if self.positions[char] in self.worlddict[key] and key != "Time":
+                    self.marked.append(char)
             if char in self.marked: # if the current character is marked for death, skip
                 continue
             else:
                 move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
                 xchange = move.right - move.left # simplify down to a move on x axis
                 ychange = move.up - move.down # simplify to a move on y axis
-                self.positions[char][0] = (self.positions[char][0] + xchange) % self.size
+                self.positions[char][0] = (self.positions[char][0] + xchange) % self.size # keep positions within bounds
                 self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
                 for x in self.positions:
                     if x in self.marked: # if the other character has been added to marked, skip
@@ -194,7 +218,7 @@ class world:
                 for coord in self.worlddict.get("Fire", []): # loop through the coordinates at the fire key
                     w.write(f"Fire,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Fire"
        
-w = world(20, [])
+w = world(20, ["Cole"])
 w.time()
 w.get_stats()
 w.characters()

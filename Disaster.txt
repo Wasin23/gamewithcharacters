@@ -1,1 +1,6 @@
-Fire,10,4
+Fire,18,7
+Fire,0,5
+Fire,0,7
+Fire,1,5
+Fire,1,7
+Fire,2,5
