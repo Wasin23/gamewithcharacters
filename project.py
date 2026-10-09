@@ -117,12 +117,46 @@ class world:
                         dir = random.sample(nd.dirlist, 3)
                         nd.visited[tuple(start)] = "Fire" # add the new start coords to fire inside visited
 
-                    self.worlddict["Fire"] = list(nd.visited) # set worlddict at fire to the updated visited list
+                    self.worlddict["Fire"] = list(coord for coord, type in nd.visited.items() if type == "Fire") # set worlddict at fire to the updated visited list
+
+            def earthquake_DFS(nd): # create earthquake function
+                if self.tick % 57 == 0:
+                    self.worlddict["Earthquake"] = []
+                else:
+                    oldquake_coords = [coord for coord, type in nd.visited.items() if type == "Earthquake"] # find the quake coordinates from the previous round and set it to oldquake
+                    for coord in oldquake_coords: # loop through oldquake
+                        del nd.visited[coord] # delete the previous records of oldquake inside the visited dict
+                    if oldquake_coords:
+                        queue = deque(oldquake_coords) # build queue for dfs by creating a list with the start coordinates 
+                        dir = random.sample(nd.dirlist, 2) # pick two directions
+                        for spot in list(oldquake_coords): # loop through the old coordinates
+                            spot = queue.pop()
+                            for i in dir: 
+                                s = list(spot) 
+                                newcoords = [(s[0] + i[0]) % (self.size), (s[1] + i[1]) % (self.size // 2)] 
+                                newspot = tuple(newcoords) 
+                                if newspot in nd.visited:
+                                    continue
+                                else: 
+                                    queue.append(newspot) 
+                                    nd.visited[tuple(newspot)] = "Earthquake"
+                            else:
+                                continue
+                            
+                    elif self.tick % 50 == 0: # if the time is a multiple of 50 start an earthquake
+                        print("An Earthquake has started! (marked as /)")
+                        start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on Earthquake
+                        queue = deque([start]) # build queue for dfs by creating a list with the start coordinates tupled
+                        dir = random.sample(nd.dirlist, 3)
+                        nd.visited[tuple(start)] = "Earthquake" # add the new start coords to Earthquake inside visited
+
+                    self.worlddict["Earthquake"] = list([coord for coord, type in nd.visited.items() if type == "Earthquake"]) # set worlddict at earthquake to the updated visited list
 
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
         nd.update()
         nd.fire_BFS()
+        nd.earthquake_DFS()
 
     def land(self):    
         self.grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
@@ -138,6 +172,8 @@ class world:
                     y = coords[1] # set y to the 1st index in the list
                     if condition == "Fire": # if condition string is fire mark the grid coords wih an X
                         self.grid[y][x] = "X"
+                    if condition == "Earthquake": # if condition string is earthquake mark the grid coords wih /
+                        self.grid[y][x] = "/"
         return self.grid
 
     def get_stats(self):
@@ -180,7 +216,7 @@ class world:
 
         for char in self.positions:
             for key in self.worlddict:
-                if self.positions[char] in self.worlddict[key] and key != "Time":
+                if self.positions[char] == self.worlddict[key] and key != "Time":
                     self.marked.append(char)
             if char in self.marked: # if the current character is marked for death, skip
                 continue
@@ -217,6 +253,9 @@ class world:
             if self.worlddict.get("Fire", []): # if the worlddict at fire exists
                 for coord in self.worlddict.get("Fire", []): # loop through the coordinates at the fire key
                     w.write(f"Fire,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Fire"
+            if self.worlddict.get("Earthquake", []): # if the worlddict at fire exists
+                for coord in self.worlddict.get("Earthquake", []): # loop through the coordinates at the Earthquake key
+                    w.write(f"Earthquake,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Earthquake"
        
 w = world(20, ["Cole"])
 w.time()
