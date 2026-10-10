@@ -12,7 +12,7 @@ import pandas
 # TODO LIST
 # create fire using BFS: DONE
 # Create earthquake using DFS:
-# Kadane algo for storms:
+# sliding window algo for snow / heat:
 # Character memories for previous x positions to skew movement towards something, assigned to self.positions:
 # Potential disaster zone rescue (shortest path):
 # Food / resources:
@@ -131,22 +131,51 @@ class world:
                         spot = start
                         for i in dir: # want to add this direction until it hits the end of the map
                             s = list(spot) # the selected coordinate taken from the queue
-                            while 0 <= s[0] < self.size and 0 <= s[1] < self.size // 2:
-                                newcoords = [(s[0] + i[0]), (s[1] + i[1])] 
-                                newspot = tuple(newcoords) 
-                                s = list(newspot)
-                                if newspot in nd.visited:
+                            while 0 <= s[0] < self.size and 0 <= s[1] < self.size // 2: # while both coordinates are within the map
+                                newcoords = [(s[0] + i[0]), (s[1] + i[1])] # set newcoords to the current coords + direction
+                                newspot = tuple(newcoords) # set new coords to a tuple
+                                s = list(newspot) # set s to a list again
+                                if newspot in nd.visited: # if newspot already exists ignore
                                     continue
-                                elif 0 <= s[0] < self.size and 0 <= s[1] < self.size // 2: 
-                                    nd.visited[tuple(newspot)] = "Earthquake"
+                                elif 0 <= s[0] < self.size and 0 <= s[1] < self.size // 2: # if s coords are in bounds 
+                                    nd.visited[tuple(newspot)] = "Earthquake" # add to visited
 
                     self.worlddict["Earthquake"] = list([coord for coord, type in nd.visited.items() if type == "Earthquake"]) # set worlddict at earthquake to the updated visited list
 
+            def storm_SW(nd):
+                grid = [self.size // 2, self.size]
+                chargegrid = []
+                for row in range(grid[0]):
+                    chargegrid.append([])
+                    for column in range(grid[1]):
+                        column = random.randint(-10, 10)
+                        chargegrid[row].append(column)
+                k = int(self.size * 0.1)
+                listOfGreatestValues = []
+                for row in chargegrid:
+                    bestlist = []
+                    currentsum = sum(row[:k])
+                    bestlist.append(currentsum)
+                    for item in range(k, len(row)):
+                        currentsum = currentsum + row[item] - row[item - k]
+                        bestlist.append(currentsum)
+                    rowmax = max(bestlist)
+                    rowmin = min(bestlist)
+                    listOfGreatestValues.append([rowmax, rowmin])
+                a = max(value[0] for value in listOfGreatestValues)
+                b = min(value[1] for value in listOfGreatestValues)
+                deviationOfAllCharges = numpy.std(chargegrid)
+                if abs(a) > abs(b): # if heat is more extreme
+                    pass
+                elif abs(b) > abs(a): # if cold is more extreme
+                    pass
+                
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
         nd.update()
         nd.fire_BFS()
         nd.earthquake_DFS()
+        nd.storm_SW()
 
     def land(self):    
         self.grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
