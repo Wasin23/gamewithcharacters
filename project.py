@@ -81,9 +81,7 @@ class world:
                         else:
                             self.worlddict[spottype[0]] = [[int(x) for x in spottype[1:]]] # rebuild self.worlddict dict from Disaster.txt and set the positions as integers
                             coord = tuple(int(x) for x in spottype[1:])
-                            nd.visited[coord] = spottype[0] 
-                with open("Tracker", "r") as d:
-                    pass
+                            nd.visited[coord] = spottype[0]
             
             def fire_BFS(nd): # create fire function
                 if self.tick % 30 == 0: # if the tick is a multiple of 30, kill the fire
@@ -125,7 +123,7 @@ class world:
                 if self.worlddict.get("Earthquake", []):
                     self.worlddict["Earthquake"] = []
                 else:          
-                    if self.tick % 1 == 0: # if the time is a multiple of 50 start an earthquake
+                    if self.tick % 5 == 0: # if the time is a multiple of 50 start an earthquake
                         print("An Earthquake has started! (marked as /)")
                         start = [random.randint(0, self.size - 1), random.randint(0, (self.size // 2) - 1)] # set a random coordinate on the map on Earthquake
                         dir = random.sample(nd.dirlist, 4)
@@ -181,8 +179,9 @@ class world:
                                 if item <= b + deviationOfAllCharges: # if each item is within a single sd of the averaged maxxed value
                                     nd.visited[(x, y)] = "Snow" # add the item's coords to the visited dict with value "Snow"
                         self.worlddict["Snow"] = list([coord for coord, type in nd.visited.items() if type == "Snow"]) # add to worlddict
-                elif x:
-                    pass  
+                elif (self.tick % 10) - 5 == 0: # after 5 rounds make the storm go away
+                    self.worlddict["Heat"] = []
+                    self.worlddict["Snow"] = []
                 
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
@@ -207,6 +206,10 @@ class world:
                         self.grid[y][x] = "X"
                     if condition == "Earthquake": # if condition string is earthquake mark the grid coords wih /
                         self.grid[y][x] = "/"
+                    if condition == "Heat":
+                        self.grid[y][x] = "^"
+                    if condition == "Snow":
+                        self.grid[y][x] = "*"
         return self.grid
 
     def get_stats(self):
@@ -241,22 +244,36 @@ class world:
 
     def movement(self):
         class moves():
-            def __init__(move, left, right, up, down, ): # initialize move object, then directions
+            def __init__(move, left, right, up, down, chanceToMove=0): # initialize move object, then directions
                 move.left = left
                 move.right = right
                 move.up = up
                 move.down = down
+                move.chanceToMove = chanceToMove
 
         for char in self.positions:
             for key in self.worlddict:
-                if key != "Time" and tuple(self.positions[char]) in self.worlddict[key]:
+                if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
                     self.marked.append(char)
             if char in self.marked: # if the current character is marked for death, skip
                 continue
             else:
                 move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
+                for key in self.worlddict:
+                    if key == "Heat" and tuple(self.positions[char]) in self.worlddict[key]:
+                        move.chanceToMove = 2
+                    elif key == "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
+                        move.chanceToMove = 1
                 xchange = move.right - move.left # simplify down to a move on x axis
                 ychange = move.up - move.down # simplify to a move on y axis
+                if move.chanceToMove == 1:
+                    xchange = 0
+                    ychange = 0
+                elif move.chanceToMove == 2:
+                    xchange = random.randint(-4, 4)
+                    ychange = random.randint(-4, 4)
+                else:
+                    pass
                 self.positions[char][0] = (self.positions[char][0] + xchange) % self.size # keep positions within bounds
                 self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
                 for x in self.positions:
@@ -274,7 +291,7 @@ class world:
                                     self.marked.append(x) # mark char already in position for death
             for key in self.worlddict:
                 # if the key (uniterable so checked for first) is not time and the tuple of a characters position is inside the worlddict
-                if key != "Time" and tuple(self.positions[char]) in self.worlddict[key]: 
+                if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
                     self.marked.append(char) # add to marked for death
         for name in set(self.marked): 
             print(f"{name} dies!")
@@ -293,6 +310,12 @@ class world:
             if self.worlddict.get("Earthquake", []): # if the worlddict at earthquake exists
                 for coord in self.worlddict.get("Earthquake", []): # loop through the coordinates at the Earthquake key
                     w.write(f"Earthquake,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Earthquake"
+            if self.worlddict.get("Heat", []): # if worlddict at heat exists
+                for coord in self.worlddict.get("Heat", []): # loop through the coordinates at the Heat key
+                    w.write(f"Heat,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Heat"
+            if self.worlddict.get("Snow", []): # if worlddict at snow exists
+                for coord in self.worlddict.get("Snow", []): # loop through the coordinates at the snow key
+                    w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
        
 w = world(30, [])
 w.time()
