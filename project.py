@@ -82,6 +82,8 @@ class world:
                             self.worlddict[spottype[0]] = [[int(x) for x in spottype[1:]]] # rebuild self.worlddict dict from Disaster.txt and set the positions as integers
                             coord = tuple(int(x) for x in spottype[1:])
                             nd.visited[coord] = spottype[0] 
+                with open("Tracker", "r") as d:
+                    pass
             
             def fire_BFS(nd): # create fire function
                 if self.tick % 30 == 0: # if the tick is a multiple of 30, kill the fire
@@ -143,32 +145,44 @@ class world:
                     self.worlddict["Earthquake"] = list([coord for coord, type in nd.visited.items() if type == "Earthquake"]) # set worlddict at earthquake to the updated visited list
 
             def storm_SW(nd):
-                grid = [self.size // 2, self.size]
-                chargegrid = []
-                for row in range(grid[0]):
-                    chargegrid.append([])
-                    for column in range(grid[1]):
-                        column = random.randint(-10, 10)
-                        chargegrid[row].append(column)
-                k = int(self.size * 0.1)
-                listOfGreatestValues = []
-                for row in chargegrid:
-                    bestlist = []
-                    currentsum = sum(row[:k])
-                    bestlist.append(currentsum)
-                    for item in range(k, len(row)):
-                        currentsum = currentsum + row[item] - row[item - k]
-                        bestlist.append(currentsum)
-                    rowmax = max(bestlist)
-                    rowmin = min(bestlist)
-                    listOfGreatestValues.append([rowmax, rowmin])
-                a = max(value[0] for value in listOfGreatestValues)
-                b = min(value[1] for value in listOfGreatestValues)
-                deviationOfAllCharges = numpy.std(chargegrid)
-                if abs(a) > abs(b): # if heat is more extreme
-                    pass
-                elif abs(b) > abs(a): # if cold is more extreme
-                    pass
+                if self.tick % 10 == 0: # if tick is a multiple of 10 start a storm
+                    grid = [self.size // 2, self.size] # set copy o the real grid
+                    chargegrid = [] # use chargegrid to store charged values
+                    for row in range(grid[0]): # loop through grid copy 
+                        chargegrid.append([]) # add list to each row
+                        for column in range(grid[1]): # loop through each item in row
+                            column = random.randint(-10, 10) # assign a random value between -10 and 10
+                            chargegrid[row].append(column) # add the value back to chargegrid
+                    k = int(self.size * 0.1) # set k window size to 10% the x value of the grid
+                    listOfGreatestValues = [] # initialize greatest values per row list
+                    for row in chargegrid: # loop through chargegrid rows
+                        bestlist = [] # initialize the list per row that tracks the greatest sum values from each k len window in the row
+                        currentsum = sum(row[:k]) # start with a sum from start to k
+                        bestlist.append(currentsum) # add to bestlist for this row
+                        for item in range(k, len(row)): # loop through every other k len window
+                            # set currentsum to its previous value added to the next value in the row, then subtract the back value (next window)
+                            currentsum = currentsum + row[item] - row[item - k] 
+                            bestlist.append(currentsum) # add the sum to bestlist
+                        rowmax = max(bestlist) # find the max inside the rows list
+                        rowmin = min(bestlist) # find the min inside the rows list
+                        listOfGreatestValues.append([rowmax, rowmin]) # set greatest values per row into the list of the smallest and largest values inside each window
+                    a = max(value[0] for value in listOfGreatestValues) // k # set a to the largest sum in that set then averaged 
+                    b = min(value[1] for value in listOfGreatestValues) // k # set b to the smallest sum in that set then averaged 
+                    deviationOfAllCharges = numpy.std(chargegrid) # take standard deviation of all values 
+                    if abs(a) > abs(b): # if heat is more extreme
+                        for y, row in enumerate(chargegrid): # loop thru rows chargegrid
+                            for x, item in enumerate(row): # loop through items in row
+                                if item >= a - deviationOfAllCharges: # if each item is within a single sd of the averaged maxxed value
+                                    nd.visited[(x, y)] = "Heat" # add the item's coords to the visited dict with value "Heat"
+                        self.worlddict["Heat"] = list([coord for coord, type in nd.visited.items() if type == "Heat"]) # add to worlddict
+                    elif abs(b) > abs(a): # if cold is more extreme
+                        for y, row in enumerate(chargegrid): # loop thru rows chargegrid
+                            for x, item in enumerate(row): # loop through items in row
+                                if item <= b + deviationOfAllCharges: # if each item is within a single sd of the averaged maxxed value
+                                    nd.visited[(x, y)] = "Snow" # add the item's coords to the visited dict with value "Snow"
+                        self.worlddict["Snow"] = list([coord for coord, type in nd.visited.items() if type == "Snow"]) # add to worlddict
+                elif x:
+                    pass  
                 
         nd = natural_disasters([-1, 0], [1, 0], [0, 1], [0, -1], [-1, 1], [-1, -1], [1, 1], [1, -1]) # initialize natural disaster class with movement directions
         # call each natural disaster
