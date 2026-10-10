@@ -164,9 +164,9 @@ class world:
                         rowmax = max(bestlist) # find the max inside the rows list
                         rowmin = min(bestlist) # find the min inside the rows list
                         listOfGreatestValues.append([rowmax, rowmin]) # set greatest values per row into the list of the smallest and largest values inside each window
-                    a = max(value[0] for value in listOfGreatestValues) // k # set a to the largest sum in that set then averaged 
-                    b = min(value[1] for value in listOfGreatestValues) // k # set b to the smallest sum in that set then averaged 
-                    deviationOfAllCharges = numpy.std(chargegrid) # take standard deviation of all values 
+                    a = int(max(value[0] for value in listOfGreatestValues) / k) # set a to the largest sum in that set then averaged 
+                    b = int(min(value[1] for value in listOfGreatestValues) / k) # set b to the smallest sum in that set then averaged 
+                    deviationOfAllCharges = numpy.std(chargegrid) // random.randint(1, 4) # take standard deviation of all values and half it
                     if abs(a) > abs(b): # if heat is more extreme
                         for y, row in enumerate(chargegrid): # loop thru rows chargegrid
                             for x, item in enumerate(row): # loop through items in row
@@ -316,7 +316,7 @@ class world:
             if self.worlddict.get("Snow", []): # if worlddict at snow exists
                 for coord in self.worlddict.get("Snow", []): # loop through the coordinates at the snow key
                     w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
-       
+
 w = world(30, [])
 w.time()
 w.get_stats()
