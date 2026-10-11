@@ -235,7 +235,7 @@ class world:
                         continue
                     pastpos = [int(line.split(",")[3]), int(line.split(",")[4])]
                     currentpos = [int(line.split(",")[1]), int(line.split(",")[2])]
-                    self.posHistory[line.split(",")[0]] = [pastpos, currentpos]
+                    self.posHistory[line.split(",")[0]] = [currentpos, pastpos]
 
     def characters(self):
         for char in self.character:
@@ -331,19 +331,19 @@ class world:
                         pass
                     self.positions[char][0] = (self.positions[char][0] + xchange) % self.size # keep positions within bounds
                     self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
-                    for x in self.positions:
-                        if x in self.marked: # if the other character has been added to marked, skip
-                            continue
-                        else:
-                            # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
-                            if self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
-                                roll = random.randint(0, 1) # random interaction picker
-                                if roll == 1: # first interaction --> random death
-                                    s = random.randint(0, 10)
-                                    if s >= 6: # if coinflip is greater than 5
-                                        self.marked.append(char) # mark current moving char for death
-                                    if s <= 5: # if coinflip is less than 6
-                                        self.marked.append(x) # mark char already in position for death
+            for x in self.positions:
+                if x in self.marked: # if the other character has been added to marked, skip
+                    continue
+                else:
+                    # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
+                    if self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
+                        roll = random.randint(0, 1) # random interaction picker
+                        if roll == 1: # first interaction --> random death
+                            s = random.randint(0, 10)
+                            if s >= 6: # if coinflip is greater than 5
+                                self.marked.append(char) # mark current moving char for death
+                            if s <= 5: # if coinflip is less than 6
+                                self.marked.append(x) # mark char already in position for death
             for key in self.worlddict:
                 # if the key (uniterable so checked for first) is not time and the tuple of a characters position is inside the worlddict
                 if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
@@ -376,8 +376,8 @@ class world:
                     w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
 
 userInput = input("Would you like to start the game? ")
-peopleList = [input("Who would you like to add to the game? ")]
 if userInput.upper() == "YES":
+    peopleList = [input("Who would you like to add to the game? ")]
     while True:
         w = world(50, peopleList)
         w.time()
