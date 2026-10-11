@@ -35,6 +35,7 @@ class world:
         self.tick = None # create time 
         self.positions = {} # create dict of positions
         self.worlddict = {} # create dict of world info
+        self.posHistory = {} # set dict of position history
         self.grid = []
         self.marked = []
         for char in self.character: self.positions[char] = None
@@ -226,6 +227,15 @@ class world:
                     charstat = line.split(",") # split the stats of each character found into parts
                     print(charstat) # print the stats
                     self.positions[charstat[0]] = [int(x) for x in charstat[1:]] # rebuild self.positons dict from characters.txt and set the positions as integers
+            with open("PositionHistory.txt", "r") as r:
+                contents = r.read()
+                lines = contents.split("\n")
+                for line in lines:
+                    if not line:
+                        continue
+                    pastpos = [int(line.split(",")[3]), int(line.split(",")[4])]
+                    currentpos = [int(line.split(",")[1]), int(line.split(",")[2])]
+                    self.posHistory[line.split(",")[0]] = [pastpos, currentpos]
 
     def characters(self):
         for char in self.character:
@@ -268,7 +278,6 @@ class world:
                         if abs(coord[0] - xpos) <= 5 and abs(coord[1] - ypos) <= 5:
                             list = [coord[0], coord[1]]
                             charRadius.append(list)
-            print(charRadius)
             if char in self.marked: # if the current character is marked for death, skip
                 continue
             else:
@@ -281,28 +290,29 @@ class world:
                 dirDict["5"] = [self.positions[char][0] - 1, self.positions[char][1] - 1] # leftdown
                 dirDict["6"] = [self.positions[char][0] + 1, self.positions[char][1] + 1] # rightup
                 dirDict["7"] = [self.positions[char][0] + 1, self.positions[char][1] - 1] # rightdown
-                schema = {
+                schema = { # set schema for ollama
                     "type": "object",
                     "properties": {
                         "choice": {"type": "integer"}
                     },
                     "required": ["choice"]
                 }
-                response = ollama.chat(
+                response = ollama.chat( # get model then systemprompt the model, then set format to json return
                     model = 'llama3.2',
                     messages = [
                         {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
                     ],
                     format = schema
                 )
-                print(response)
-                aimove = str(json.loads(response.message.content)["choice"])
-                coords = dirDict[aimove]
-                coords[0] = coords[0] % self.size
-                coords[1] = coords[1] % (self.size // 2)
+                print(f"Ai Choice: {str(json.loads(response.message.content)["choice"])}") # print model's answer json parsed
+                aimove = str(json.loads(response.message.content)["choice"]) # set answer
+                coords = dirDict[aimove] # set coords to the dict at answer
+                coords[0] = coords[0] % self.size # wrap coords
+                coords[1] = coords[1] % (self.size // 2) 
                 checkedAIMove = coords
-                self.positions[char] = checkedAIMove
-                if char != "Cole":
+                self.posHistory[char] = [checkedAIMove, self.positions[char]]
+                self.positions[char] = checkedAIMove # set char position to ai's decision
+                if char == "Test":
                     move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
                     for key in self.worlddict:
                         if key == "Heat" and tuple(self.positions[char]) in self.worlddict[key]:
@@ -346,6 +356,9 @@ class world:
         with open("characters.txt", "w") as f: 
             for char in self.positions: # loop though positions dict
                 f.write(f"{char},{self.positions[char][0]},{self.positions[char][1]}\n") # write character positions to the charcters file as a save
+        with open("PositionHistory.txt", "w") as w:
+            for char in self.posHistory:
+                w.write(f"{char},{self.posHistory[char][0][0]},{self.posHistory[char][0][1]},{self.posHistory[char][1][0]},{self.posHistory[char][1][1]}\n")
         with open("Time.txt", "w") as w: # open time file save
             w.write(f"{self.tick}") # save self.tick written from the loop in time()
         with open("Disaster.txt", "w") as w: # open disaster progress file
@@ -362,14 +375,18 @@ class world:
                 for coord in self.worlddict.get("Snow", []): # loop through the coordinates at the snow key
                     w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
 
-while True:
-    w = world(50, ["Cole"])
-    w.time()
-    w.get_stats()
-    w.characters()
-    w.trigger_disaster()
-    w.movement()
-    w.save()
-    for row in w.land():
-        print("".join(row))
-    time.sleep(1)
+userInput = input("Would you like to start the game? ")
+if userInput.upper() == "YES":
+    while True:
+        w = world(50, [])
+        w.time()
+        w.get_stats()
+        w.characters()
+        w.trigger_disaster()
+        w.movement()
+        w.save()
+        for row in w.land():
+            print("".join(row))
+        time.sleep(1)
+else:
+    print("Ending Program")
