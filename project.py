@@ -276,8 +276,8 @@ class world:
                 if entry != "Time":
                     for coord in self.worlddict[entry]:
                         if abs(coord[0] - xpos) <= 5 and abs(coord[1] - ypos) <= 5:
-                            list = [coord[0], coord[1]]
-                            charRadius.append(list)
+                            lista = [coord[0], coord[1]]
+                            charRadius.append(lista)
             if char in self.marked: # if the current character is marked for death, skip
                 continue
             else:
@@ -297,10 +297,10 @@ class world:
                     },
                     "required": ["choice"]
                 }
-                response = ollama.chat( # get model then systemprompt the model, then set format to json return
+                response = ollama.chat( # get model then systemprompt the model, then set return format to json 
                     model = 'llama3.2',
                     messages = [
-                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your past position was {self.posHistory.get(char, [None, None])[1]}. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
+                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your past position was {self.posHistory.get(char, [None, None])[1]}. Your goal is to avoid danger. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
                     ],
                     format = schema
                 )
