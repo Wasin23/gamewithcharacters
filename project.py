@@ -5,6 +5,7 @@ import numpy
 import pandas
 import time
 import ollama
+import json
 import ast
 
 # this project will be a way for me to practice my code.
@@ -295,7 +296,7 @@ class world:
                     format = schema
                 )
                 print(response)
-                aimove = response.message.content
+                aimove = str(json.loads(response.message.content)["choice"])
                 coords = dirDict[aimove]
                 coords[0] = coords[0] % self.size
                 coords[1] = coords[1] % (self.size // 2)
