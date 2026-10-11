@@ -3,6 +3,9 @@ import math
 import random
 import numpy
 import pandas
+import time
+import ollama
+import ast
 
 # this project will be a way for me to practice my code.
 # It will build upon itself
@@ -11,8 +14,8 @@ import pandas
 
 # TODO LIST
 # create fire using BFS: DONE
-# Create earthquake using DFS:
-# sliding window algo for snow / heat:
+# Create earthquake using DFS: DONE
+# sliding window algo for snow / heat: DONE
 # Character memories for previous x positions to skew movement towards something, assigned to self.positions:
 # Potential disaster zone rescue (shortest path):
 # Food / resources:
@@ -255,40 +258,81 @@ class world:
             for key in self.worlddict:
                 if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
                     self.marked.append(char)
+            charRadius = []
+            xpos = self.positions[char][0]
+            ypos = self.positions[char][1]
+            for entry in self.worlddict:
+                if entry != "Time":
+                    for coord in self.worlddict[entry]:
+                        if abs(coord[0] - xpos) <= 5 and abs(coord[1] - ypos) <= 5:
+                            list = [coord[0], coord[1]]
+                            charRadius.append(list)
+            print(charRadius)
             if char in self.marked: # if the current character is marked for death, skip
                 continue
             else:
-                move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
-                for key in self.worlddict:
-                    if key == "Heat" and tuple(self.positions[char]) in self.worlddict[key]:
-                        move.chanceToMove = 2
-                    elif key == "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
-                        move.chanceToMove = 1
-                xchange = move.right - move.left # simplify down to a move on x axis
-                ychange = move.up - move.down # simplify to a move on y axis
-                if move.chanceToMove == 1:
-                    xchange = 0
-                    ychange = 0
-                elif move.chanceToMove == 2:
-                    xchange = random.randint(-4, 4)
-                    ychange = random.randint(-4, 4)
-                else:
-                    pass
-                self.positions[char][0] = (self.positions[char][0] + xchange) % self.size # keep positions within bounds
-                self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
-                for x in self.positions:
-                    if x in self.marked: # if the other character has been added to marked, skip
-                        continue
+                dirDict = {}
+                dirDict["0"] = [self.positions[char][0] - 1, self.positions[char][1] + 0] # left
+                dirDict["1"] = [self.positions[char][0] + 1, self.positions[char][1] + 0] # right
+                dirDict["2"] = [self.positions[char][0] + 0, self.positions[char][1] - 1] # down
+                dirDict["3"] = [self.positions[char][0] + 0, self.positions[char][1] + 1] # up
+                dirDict["4"] = [self.positions[char][0] - 1, self.positions[char][1] + 1] # leftup
+                dirDict["5"] = [self.positions[char][0] - 1, self.positions[char][1] - 1] # leftdown
+                dirDict["6"] = [self.positions[char][0] + 1, self.positions[char][1] + 1] # rightup
+                dirDict["7"] = [self.positions[char][0] + 1, self.positions[char][1] - 1] # rightdown
+                schema = {
+                    "type": "object",
+                    "properties": {
+                        "choice": {"type": "integer"}
+                    },
+                    "required": ["choice"]
+                }
+                response = ollama.chat(
+                    model = 'llama3.2',
+                    messages = [
+                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
+                    ],
+                    format = schema
+                )
+                print(response)
+                aimove = response.message.content
+                coords = dirDict[aimove]
+                coords[0] = coords[0] % self.size
+                coords[1] = coords[1] % (self.size // 2)
+                checkedAIMove = coords
+                self.positions[char] = checkedAIMove
+                if char != "Cole":
+                    move = moves(random.randint(0, 1), random.randint(0, 1), random.randint(0, 1), random.randint(0, 1)) # set directions to random values
+                    for key in self.worlddict:
+                        if key == "Heat" and tuple(self.positions[char]) in self.worlddict[key]:
+                            move.chanceToMove = 2
+                        elif key == "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
+                            move.chanceToMove = 1
+                    xchange = move.right - move.left # simplify down to a move on x axis
+                    ychange = move.up - move.down # simplify to a move on y axis
+                    if move.chanceToMove == 1:
+                        xchange = 0
+                        ychange = 0
+                    elif move.chanceToMove == 2:
+                        xchange = random.randint(-4, 4)
+                        ychange = random.randint(-4, 4)
                     else:
-                        # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
-                        if self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
-                            roll = random.randint(0, 1) # random interaction picker
-                            if roll == 1: # first interaction --> random death
-                                s = random.randint(0, 10)
-                                if s >= 6: # if coinflip is greater than 5
-                                    self.marked.append(char) # mark current moving char for death
-                                if s <= 5: # if coinflip is less than 6
-                                    self.marked.append(x) # mark char already in position for death
+                        pass
+                    self.positions[char][0] = (self.positions[char][0] + xchange) % self.size # keep positions within bounds
+                    self.positions[char][1] = (self.positions[char][1] + ychange) % (self.size // 2)
+                    for x in self.positions:
+                        if x in self.marked: # if the other character has been added to marked, skip
+                            continue
+                        else:
+                            # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
+                            if self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
+                                roll = random.randint(0, 1) # random interaction picker
+                                if roll == 1: # first interaction --> random death
+                                    s = random.randint(0, 10)
+                                    if s >= 6: # if coinflip is greater than 5
+                                        self.marked.append(char) # mark current moving char for death
+                                    if s <= 5: # if coinflip is less than 6
+                                        self.marked.append(x) # mark char already in position for death
             for key in self.worlddict:
                 # if the key (uniterable so checked for first) is not time and the tuple of a characters position is inside the worlddict
                 if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
@@ -317,12 +361,14 @@ class world:
                 for coord in self.worlddict.get("Snow", []): # loop through the coordinates at the snow key
                     w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
 
-w = world(30, [])
-w.time()
-w.get_stats()
-w.characters()
-w.trigger_disaster()
-w.movement()
-w.save()
-for row in w.land():
-    print("".join(row))
+while True:
+    w = world(50, ["Cole"])
+    w.time()
+    w.get_stats()
+    w.characters()
+    w.trigger_disaster()
+    w.movement()
+    w.save()
+    for row in w.land():
+        print("".join(row))
+    time.sleep(1)
