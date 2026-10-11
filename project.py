@@ -300,7 +300,7 @@ class world:
                 response = ollama.chat( # get model then systemprompt the model, then set format to json return
                     model = 'llama3.2',
                     messages = [
-                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your past position was {self.posHistory[char][1]}. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
+                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your past position was {self.posHistory.get(char, [None, None])[1]}. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
                     ],
                     format = schema
                 )
