@@ -17,8 +17,8 @@ import ast
 # create fire using BFS: DONE
 # Create earthquake using DFS: DONE
 # sliding window algo for snow / heat: DONE
-# Character memories for previous x positions to skew movement towards something, assigned to self.positions:
-# Potential disaster zone rescue (shortest path):
+# Character memories for previous x positions to skew movement towards something, assigned to self.posHistory: DONE
+# Potential disaster zone rescue (shortest path): 
 # Food / resources:
 
 # use DSA for complex character movement, assignment of traits, and other environmental factors
@@ -376,9 +376,10 @@ class world:
                     w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
 
 userInput = input("Would you like to start the game? ")
+peopleList = [input("Who would you like to add to the game? ")]
 if userInput.upper() == "YES":
     while True:
-        w = world(50, [])
+        w = world(50, peopleList)
         w.time()
         w.get_stats()
         w.characters()
