@@ -18,7 +18,7 @@ import ast
 # Create earthquake using DFS: DONE
 # sliding window algo for snow / heat: DONE
 # Character memories for previous x positions to skew movement towards something, assigned to self.posHistory: DONE
-# Food / resources: 
+# Food / resources: DONE
 
 # use DSA for complex character movement, assignment of traits, and other environmental factors
 # Have the list print every second with updates
