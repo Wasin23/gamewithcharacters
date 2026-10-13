@@ -18,8 +18,7 @@ import ast
 # Create earthquake using DFS: DONE
 # sliding window algo for snow / heat: DONE
 # Character memories for previous x positions to skew movement towards something, assigned to self.posHistory: DONE
-# Potential disaster zone rescue (shortest path): 
-# Food / resources:
+# Food / resources: 
 
 # use DSA for complex character movement, assignment of traits, and other environmental factors
 # Have the list print every second with updates
@@ -195,6 +194,33 @@ class world:
         nd.earthquake_DFS()
         nd.storm_SW()
 
+    def food(self):
+        self.worlddict["Food"] = None
+        with open("Disaster.txt", "r") as r:
+            contents = r.read()
+            lines = contents.split("\n")
+            for line in lines:
+                if line.split(",")[0] == "Food":
+                    self.worlddict["Food"] = [[int(line.split(",")[1]), int(line.split(",")[2])]]
+
+        if self.worlddict["Food"] is None: # if no food exists
+            disastercoordlist = [coord for value in self.worlddict if value != "Time" and value != "Food" for coord in self.worlddict[value]] # make list of coords of all disasters
+            differenceDict = {} # set dict of all point differences between disasters
+            for row in range(self.size // 2): # loop thru rows in grid
+                for column in range(self.size): # loop thru each value in the row
+                    bigx = []
+                    bigy = []
+                    for coord in disastercoordlist: # loop through disaster list
+                        bigx.append(abs(column - coord[0])) # add the difference between the point and each disaster coordinate at x
+                        bigy.append(abs(row - coord[1])) # add the difference between the point and each disaster coordinate at y
+                    a = sum(bigx) + sum(bigy) # add both values per point
+                    differenceDict[(row, column)] = a # append the value to difference dict with the key as its coordinates
+            best = max(differenceDict.values()) # return the biggest value in the dict
+            coordinatesToAddFood = [key for key, value in differenceDict.items() if value == best] # find the coordinates that key that value
+            self.worlddict["Food"] = [[coordinatesToAddFood[0][1], coordinatesToAddFood[0][0]]] # set food to those coordinates
+        else:
+            pass
+
     def land(self):    
         self.grid = [["."] * self.size for i in range(self.size // 2)] # create a grid for the characters to traverse
         for char in self.positions: # for each character in the dict
@@ -211,10 +237,12 @@ class world:
                         self.grid[y][x] = "X"
                     if condition == "Earthquake": # if condition string is earthquake mark the grid coords wih /
                         self.grid[y][x] = "/"
-                    if condition == "Heat":
+                    if condition == "Heat": # if condition is head mark coords with "^"
                         self.grid[y][x] = "^"
-                    if condition == "Snow":
+                    if condition == "Snow": # if condition is snow mark coords with "*"
                         self.grid[y][x] = "*"
+                    if condition == "Food": # if condition is food mark coords with "O"
+                        self.grid[y][x] = "O"
         return self.grid
 
     def get_stats(self):
@@ -267,13 +295,13 @@ class world:
 
         for char in self.positions:
             for key in self.worlddict:
-                if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
+                if key != "Time" and key != "Heat" and key != "Snow" and key != "Food" and tuple(self.positions[char]) in self.worlddict[key]:
                     self.marked.append(char)
             charRadius = []
             xpos = self.positions[char][0]
             ypos = self.positions[char][1]
             for entry in self.worlddict:
-                if entry != "Time":
+                if entry != "Time" and entry != "Food":
                     for coord in self.worlddict[entry]:
                         if abs(coord[0] - xpos) <= 5 and abs(coord[1] - ypos) <= 5:
                             lista = [coord[0], coord[1]]
@@ -293,14 +321,14 @@ class world:
                 schema = { # set schema for ollama
                     "type": "object",
                     "properties": {
-                        "choice": {"type": "integer"}
+                        "choice": {"type": "integer", "enum": [0,1,2,3,4,5,6,7]}
                     },
                     "required": ["choice"]
                 }
                 response = ollama.chat( # get model then systemprompt the model, then set return format to json 
                     model = 'llama3.2',
                     messages = [
-                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your past position was {self.posHistory.get(char, [None, None])[1]}. Your goal is to avoid danger. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. Return your asnwer as an int 0 through 7'}
+                        {'role': 'user', 'content': f'Your current position is {self.positions[char]}. The positions of the danger around you are {charRadius}. Your past position was {self.posHistory.get(char, [None, None])[1]}. The food is located at {self.worlddict["Food"]}. Your goal is to avoid danger and eat food. Your options of movement are {dirDict["0"]}, {dirDict["1"]}, {dirDict["2"]}, {dirDict["3"]}, {dirDict["4"]}, {dirDict["5"]}, {dirDict["6"]}, {dirDict["7"]}. MOVE CLOSER TO THE FOOD. Return your answer as an int 0 through 7'}
                     ],
                     format = schema
                 )
@@ -334,19 +362,20 @@ class world:
             for x in self.positions:
                 if x in self.marked: # if the other character has been added to marked, skip
                     continue
-                else:
-                    # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
-                    if self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
-                        roll = random.randint(0, 1) # random interaction picker
-                        if roll == 1: # first interaction --> random death
-                            s = random.randint(0, 10)
-                            if s >= 6: # if coinflip is greater than 5
-                                self.marked.append(char) # mark current moving char for death
-                            if s <= 5: # if coinflip is less than 6
-                                self.marked.append(x) # mark char already in position for death
+                # if the second character is equal to the current moving character's position and the current moving isn't itself, do...
+                elif self.positions[x] == self.positions[char] and self.positions[x] is not self.positions[char]: 
+                    roll = random.randint(0, 1) # random interaction picker
+                    if roll == 1: # first interaction --> random death
+                        s = random.randint(0, 10)
+                        if s >= 6: # if coinflip is greater than 5
+                            self.marked.append(char) # mark current moving char for death
+                        if s <= 5: # if coinflip is less than 6
+                            self.marked.append(x) # mark char already in position for death
+                if self.worlddict["Food"] and self.positions[x] == self.worlddict["Food"][0]:
+                    self.worlddict["Food"] = None
             for key in self.worlddict:
                 # if the key (uniterable so checked for first) is not time and the tuple of a characters position is inside the worlddict
-                if key != "Time" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
+                if key != "Time" and key != "Food" and key != "Heat" and key != "Snow" and tuple(self.positions[char]) in self.worlddict[key]:
                     self.marked.append(char) # add to marked for death
         for name in set(self.marked): 
             print(f"{name} dies!")
@@ -364,16 +393,19 @@ class world:
         with open("Disaster.txt", "w") as w: # open disaster progress file
             if self.worlddict.get("Fire", []): # if the worlddict at fire exists
                 for coord in self.worlddict.get("Fire", []): # loop through the coordinates at the fire key
-                    w.write(f"Fire,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Fire"
+                    w.write(f"Fire,{coord[0]},{coord[1]}\n") # split each coordinate value by comma and key with "Fire"
             if self.worlddict.get("Earthquake", []): # if the worlddict at earthquake exists
                 for coord in self.worlddict.get("Earthquake", []): # loop through the coordinates at the Earthquake key
-                    w.write(f"Earthquake,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Earthquake"
+                    w.write(f"Earthquake,{coord[0]},{coord[1]}\n") # split each coordinate value by comma and key with "Earthquake"
             if self.worlddict.get("Heat", []): # if worlddict at heat exists
                 for coord in self.worlddict.get("Heat", []): # loop through the coordinates at the Heat key
-                    w.write(f"Heat,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Heat"
+                    w.write(f"Heat,{coord[0]},{coord[1]}\n") # split each coordinate value by comma and key with "Heat"
             if self.worlddict.get("Snow", []): # if worlddict at snow exists
                 for coord in self.worlddict.get("Snow", []): # loop through the coordinates at the snow key
-                    w.write(f"Snow,{coord[0]},{coord[1]}\n") # splite each coordinate value by comma and hea with "Snow"
+                    w.write(f"Snow,{coord[0]},{coord[1]}\n") # split each coordinate value by comma and key with "Snow"
+            if self.worlddict.get("Food", []): # if worlddict at Food exists
+                for coord in self.worlddict.get("Food", []): # loop through the coordinates at the Food key
+                    w.write(f"Food,{coord[0]},{coord[1]}\n") # split each coordinate value by comma and hea with "Food"
 
 userInput = input("Would you like to start the game? ")
 if userInput.upper() == "YES":
@@ -384,6 +416,7 @@ if userInput.upper() == "YES":
         w.get_stats()
         w.characters()
         w.trigger_disaster()
+        w.food()
         w.movement()
         w.save()
         for row in w.land():
